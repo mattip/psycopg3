@@ -11,6 +11,7 @@ from typing import Any, Iterator, List, Optional, Sequence, Union
 from .pq import Escaping
 from .adapt import Transformer, Format
 from .proto import AdaptContext
+from ._encodings import pgconn_encoding
 
 
 def quote(obj: Any, context: Optional[AdaptContext] = None) -> str:
@@ -74,7 +75,7 @@ class Composable(object):
 
         """
         conn = context.connection if context else None
-        enc = conn.client_encoding if conn else "utf-8"
+        enc = pgconn_encoding(conn.pgconn) if conn else "utf-8"
         b = self.as_bytes(context)
         if isinstance(b, bytes):
             return b.decode(enc)
@@ -206,7 +207,7 @@ class SQL(Composable):
         if context:
             conn = context.connection
             if conn:
-                enc = conn.client_encoding
+                enc = pgconn_encoding(conn.pgconn)
         return self._obj.encode(enc)
 
     def format(self, *args: Any, **kwargs: Any) -> Composed:
@@ -365,7 +366,7 @@ class Identifier(Composable):
         if not conn:
             raise ValueError("a connection is necessary for Identifier")
         esc = Escaping(conn.pgconn)
-        enc = conn.client_encoding
+        enc = pgconn_encoding(conn.pgconn)
         escs = [esc.escape_identifier(s.encode(enc)) for s in self._obj]
         return b".".join(escs)
 
@@ -450,7 +451,7 @@ class Placeholder(Composable):
 
     def as_bytes(self, context: Optional[AdaptContext]) -> bytes:
         conn = context.connection if context else None
-        enc = conn.client_encoding if conn else "utf-8"
+        enc = pgconn_encoding(conn.pgconn) if conn else "utf-8"
         return self.as_string(context).encode(enc)
 
 

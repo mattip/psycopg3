@@ -15,6 +15,7 @@ from . import errors as e
 from .rows import Row, RowFactory
 from .proto import ConnectionType, Query, Params, PQGen
 from .cursor import BaseCursor, execute
+from ._encodings import pgconn_encoding
 
 if TYPE_CHECKING:
     from typing import Any  # noqa: F401
@@ -76,7 +77,7 @@ class ServerCursorHelper(Generic[ConnectionType, Row]):
     ) -> PQGen[None]:
         conn = cur._conn
         conn.pgconn.send_describe_portal(
-            self.name.encode(conn.client_encoding)
+            self.name.encode(pgconn_encoding(conn.pgconn))
         )
         results = yield from execute(conn.pgconn)
         cur._execute_results(results)
@@ -148,7 +149,7 @@ class ServerCursorHelper(Generic[ConnectionType, Row]):
     ) -> sql.Composable:
 
         if isinstance(query, bytes):
-            query = query.decode(cur._conn.client_encoding)
+            query = query.decode(pgconn_encoding(cur._conn.pgconn))
         if not isinstance(query, sql.Composable):
             query = sql.SQL(query)
 

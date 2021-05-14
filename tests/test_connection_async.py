@@ -11,7 +11,6 @@ from psycopg3 import AsyncConnection, Notify
 from psycopg3.rows import tuple_row
 from psycopg3.errors import UndefinedTable
 from psycopg3.conninfo import conninfo_to_dict
-from psycopg3._encodings import pg2pyenc
 from .test_cursor import my_row_factory
 
 pytestmark = pytest.mark.asyncio
@@ -300,62 +299,6 @@ async def test_autocommit_unknown(aconn):
     with pytest.raises(psycopg3.ProgrammingError):
         await aconn.set_autocommit(True)
     assert not aconn.autocommit
-
-
-async def test_get_encoding(aconn):
-    cur = aconn.cursor()
-    await cur.execute("show client_encoding")
-    (enc,) = await cur.fetchone()
-    assert aconn.client_encoding == pg2pyenc(enc)
-
-
-@pytest.mark.parametrize(
-    "enc, out, codec",
-    [
-        ("utf8", "UTF8", "utf-8"),
-        ("utf-8", "UTF8", "utf-8"),
-        ("utf_8", "UTF8", "utf-8"),
-        ("eucjp", "EUC_JP", "euc_jp"),
-        ("euc-jp", "EUC_JP", "euc_jp"),
-        ("latin9", "LATIN9", "iso8859-15"),
-    ],
-)
-async def test_normalize_encoding(aconn, enc, out, codec):
-    await aconn.execute(
-        "select set_config('client_encoding', %s, false)", [enc]
-    )
-    assert (
-        aconn.pgconn.parameter_status(b"client_encoding").decode("utf-8")
-        == out
-    )
-    assert aconn.client_encoding == codec
-
-
-@pytest.mark.parametrize(
-    "enc, out, codec",
-    [
-        ("utf8", "UTF8", "utf-8"),
-        ("utf-8", "UTF8", "utf-8"),
-        ("utf_8", "UTF8", "utf-8"),
-        ("eucjp", "EUC_JP", "euc_jp"),
-        ("euc-jp", "EUC_JP", "euc_jp"),
-    ],
-)
-async def test_encoding_env_var(dsn, monkeypatch, enc, out, codec):
-    monkeypatch.setenv("PGCLIENTENCODING", enc)
-    aconn = await psycopg3.AsyncConnection.connect(dsn)
-    assert (
-        aconn.pgconn.parameter_status(b"client_encoding").decode("utf-8")
-        == out
-    )
-    assert aconn.client_encoding == codec
-
-
-async def test_set_encoding_unsupported(aconn):
-    cur = aconn.cursor()
-    await cur.execute("set client_encoding to EUC_TW")
-    with pytest.raises(psycopg3.NotSupportedError):
-        await cur.execute("select 'x'")
 
 
 @pytest.mark.parametrize(

@@ -19,6 +19,7 @@ from . import errors as e
 from .pq import ExecStatus
 from .adapt import Format
 from .proto import ConnectionType, PQGen, Transformer
+from ._encodings import pgconn_encoding
 from .generators import copy_from, copy_to, copy_end
 from .utils.compat import create_task
 
@@ -63,7 +64,7 @@ class BaseCopy(Generic[ConnectionType]):
 
         if self._pgresult.binary_tuples == pq.Format.TEXT:
             self.formatter = TextFormatter(
-                tx, encoding=self.connection.client_encoding
+                tx, encoding=pgconn_encoding(self._pgconn)
             )
         else:
             self.formatter = BinaryFormatter(tx)
@@ -137,7 +138,7 @@ class BaseCopy(Generic[ConnectionType]):
         bmsg: Optional[bytes]
         if exc:
             msg = f"error from Python: {type(exc).__qualname__} - {exc}"
-            bmsg = msg.encode(self.connection.client_encoding, "replace")
+            bmsg = msg.encode(pgconn_encoding(self._pgconn), "replace")
         else:
             bmsg = None
 

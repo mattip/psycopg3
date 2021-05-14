@@ -8,7 +8,6 @@ import weakref
 from threading import Thread
 
 import psycopg3
-from psycopg3._encodings import pg2pyenc
 from psycopg3 import Connection, Notify
 from psycopg3.rows import tuple_row
 from psycopg3.errors import UndefinedTable
@@ -290,56 +289,6 @@ def test_autocommit_unknown(conn):
     with pytest.raises(psycopg3.ProgrammingError):
         conn.autocommit = True
     assert not conn.autocommit
-
-
-def test_get_encoding(conn):
-    (enc,) = conn.cursor().execute("show client_encoding").fetchone()
-    assert conn.client_encoding == pg2pyenc(enc)
-
-
-@pytest.mark.parametrize(
-    "enc, out, codec",
-    [
-        ("utf8", "UTF8", "utf-8"),
-        ("utf-8", "UTF8", "utf-8"),
-        ("utf_8", "UTF8", "utf-8"),
-        ("eucjp", "EUC_JP", "euc_jp"),
-        ("euc-jp", "EUC_JP", "euc_jp"),
-        ("latin9", "LATIN9", "iso8859-15"),
-    ],
-)
-def test_normalize_encoding(conn, enc, out, codec):
-    conn.execute("select set_config('client_encoding', %s, false)", [enc])
-    assert (
-        conn.pgconn.parameter_status(b"client_encoding").decode("utf-8") == out
-    )
-    assert conn.client_encoding == codec
-
-
-@pytest.mark.parametrize(
-    "enc, out, codec",
-    [
-        ("utf8", "UTF8", "utf-8"),
-        ("utf-8", "UTF8", "utf-8"),
-        ("utf_8", "UTF8", "utf-8"),
-        ("eucjp", "EUC_JP", "euc_jp"),
-        ("euc-jp", "EUC_JP", "euc_jp"),
-    ],
-)
-def test_encoding_env_var(dsn, monkeypatch, enc, out, codec):
-    monkeypatch.setenv("PGCLIENTENCODING", enc)
-    conn = psycopg3.connect(dsn)
-    assert (
-        conn.pgconn.parameter_status(b"client_encoding").decode("utf-8") == out
-    )
-    assert conn.client_encoding == codec
-
-
-def test_set_encoding_unsupported(conn):
-    cur = conn.cursor()
-    cur.execute("set client_encoding to EUC_TW")
-    with pytest.raises(psycopg3.NotSupportedError):
-        cur.execute("select 'x'")
 
 
 @pytest.mark.parametrize(
