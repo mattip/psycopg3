@@ -2,7 +2,7 @@ import codecs
 import pytest
 
 import psycopg3
-from psycopg3 import encodings
+from psycopg3 import _encodings as encodings
 
 
 def test_names_normalised():
@@ -22,7 +22,7 @@ def test_names_normalised():
     ],
 )
 def test_py2pg(pyenc, pgenc):
-    assert encodings.py2pg(pyenc) == pgenc.encode("utf8")
+    assert encodings.py2pgenc(pyenc) == pgenc.encode("utf8")
 
 
 @pytest.mark.parametrize(
@@ -34,10 +34,10 @@ def test_py2pg(pyenc, pgenc):
     ],
 )
 def test_pg2py(pyenc, pgenc):
-    assert encodings.pg2py(pgenc.encode("utf-8")) == pyenc
+    assert encodings.pg2pyenc(pgenc.encode("utf-8")) == pyenc
 
 
 @pytest.mark.parametrize("pgenc", ["MULE_INTERNAL", "EUC_TW"])
 def test_pg2py_missing(pgenc):
     with pytest.raises(psycopg3.NotSupportedError):
-        encodings.pg2py(pgenc.encode("utf-8"))
+        encodings.pg2pyenc(pgenc.encode("utf-8"))

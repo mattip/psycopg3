@@ -20,7 +20,6 @@ from . import pq
 from . import adapt
 from . import errors as e
 from . import waiting
-from . import encodings
 from .pq import ConnStatus, ExecStatus, TransactionStatus, Format
 from .sql import Composable
 from .rows import Row, RowFactory, tuple_row, TupleRow
@@ -29,6 +28,7 @@ from .proto import Query, RV
 from .cursor import Cursor, AsyncCursor
 from .conninfo import make_conninfo, ConnectionInfo
 from .generators import notifies
+from ._encodings import pg2pyenc
 from ._preparing import PrepareManager
 from .transaction import Transaction, AsyncTransaction
 from .utils.compat import asynccontextmanager
@@ -201,7 +201,7 @@ class BaseConnection(AdaptContext, Generic[Row]):
     def client_encoding(self) -> str:
         """The Python codec name of the connection's client encoding."""
         pgenc = self.pgconn.parameter_status(b"client_encoding") or b"UTF8"
-        return encodings.pg2py(pgenc)
+        return pg2pyenc(pgenc)
 
     @property
     def info(self) -> ConnectionInfo:

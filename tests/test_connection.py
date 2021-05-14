@@ -8,7 +8,7 @@ import weakref
 from threading import Thread
 
 import psycopg3
-from psycopg3 import encodings
+from psycopg3._encodings import pg2pyenc
 from psycopg3 import Connection, Notify
 from psycopg3.rows import tuple_row
 from psycopg3.errors import UndefinedTable
@@ -294,7 +294,7 @@ def test_autocommit_unknown(conn):
 
 def test_get_encoding(conn):
     (enc,) = conn.cursor().execute("show client_encoding").fetchone()
-    assert conn.client_encoding == encodings.pg2py(enc)
+    assert conn.client_encoding == pg2pyenc(enc)
 
 
 @pytest.mark.parametrize(

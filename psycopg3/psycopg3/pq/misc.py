@@ -8,6 +8,7 @@ from typing import cast, NamedTuple, Optional, Union
 
 from ._enums import DiagnosticField, ConnStatus, TransactionStatus
 from .proto import PGconn, PGresult
+from .._encodings import py_codecs
 
 
 class PGnotify(NamedTuple):
@@ -61,8 +62,6 @@ def error_message(obj: Union[PGconn, PGresult], encoding: str = "utf8") -> str:
                 bmsg = bmsg.splitlines()[0].split(b":", 1)[-1].strip()
 
     elif hasattr(obj, "error_message"):
-        from ..encodings import py_codecs
-
         # obj is a PGconn
         obj = cast(PGconn, obj)
         if obj.status == ConnStatus.OK:

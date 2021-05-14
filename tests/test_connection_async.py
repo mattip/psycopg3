@@ -7,11 +7,11 @@ import logging
 import weakref
 
 import psycopg3
-from psycopg3 import encodings
 from psycopg3 import AsyncConnection, Notify
 from psycopg3.rows import tuple_row
 from psycopg3.errors import UndefinedTable
 from psycopg3.conninfo import conninfo_to_dict
+from psycopg3._encodings import pg2pyenc
 from .test_cursor import my_row_factory
 
 pytestmark = pytest.mark.asyncio
@@ -306,7 +306,7 @@ async def test_get_encoding(aconn):
     cur = aconn.cursor()
     await cur.execute("show client_encoding")
     (enc,) = await cur.fetchone()
-    assert aconn.client_encoding == encodings.pg2py(enc)
+    assert aconn.client_encoding == pg2pyenc(enc)
 
 
 @pytest.mark.parametrize(

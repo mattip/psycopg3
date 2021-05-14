@@ -19,7 +19,7 @@ from cpython.unicode cimport (
 from psycopg3_c.pq cimport libpq, Escaping, _buffer_as_string_and_size
 
 from psycopg3 import errors as e
-from psycopg3.encodings import pg2py
+from psycopg3._encodings import pg2pyenc
 
 cdef extern from "Python.h":
     const char *PyUnicode_AsUTF8AndSize(unicode obj, Py_ssize_t *size) except NULL
@@ -43,7 +43,7 @@ cdef class _StringDumper(CDumper):
                 self._bytes_encoding = b"utf-8"
                 self.is_utf8 = 1
             else:
-                self._bytes_encoding = pg2py(pgenc).encode("utf-8")
+                self._bytes_encoding = pg2pyenc(pgenc).encode("utf-8")
                 if self._bytes_encoding == b"ascii":
                     self.is_utf8 = 1
             self.encoding = PyBytes_AsString(self._bytes_encoding)
@@ -116,7 +116,7 @@ cdef class _TextLoader(CLoader):
                 self._bytes_encoding = b"utf-8"
                 self.is_utf8 = 1
             else:
-                self._bytes_encoding = pg2py(pgenc).encode("utf-8")
+                self._bytes_encoding = pg2pyenc(pgenc).encode("utf-8")
 
             if pgenc == b"SQL_ASCII":
                 self.encoding = NULL
