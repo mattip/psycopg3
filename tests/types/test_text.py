@@ -75,11 +75,11 @@ def test_load_1char(conn, typename, fmt_out):
 
 
 @pytest.mark.parametrize("fmt_in", [Format.AUTO, Format.TEXT, Format.BINARY])
-@pytest.mark.parametrize("encoding", ["utf8", "latin9", "ascii"])
+@pytest.mark.parametrize("encoding", ["utf8", "latin9", "sql_ascii"])
 def test_dump_enc(conn, fmt_in, encoding):
     cur = conn.cursor()
 
-    conn.client_encoding = encoding
+    conn.execute(f"set client_encoding to {encoding}")
     (res,) = cur.execute(f"select ascii(%{fmt_in})", (eur,)).fetchone()
     assert res == ord(eur)
 
@@ -88,7 +88,7 @@ def test_dump_enc(conn, fmt_in, encoding):
 def test_dump_badenc(conn, fmt_in):
     cur = conn.cursor()
 
-    conn.client_encoding = "latin1"
+    conn.execute("set client_encoding to latin1")
     with pytest.raises(UnicodeEncodeError):
         cur.execute(f"select %{fmt_in}::bytea", (eur,))
 
@@ -97,7 +97,7 @@ def test_dump_badenc(conn, fmt_in):
 def test_dump_utf8_badenc(conn, fmt_in):
     cur = conn.cursor()
 
-    conn.client_encoding = "utf-8"
+    conn.execute("set client_encoding to utf8")
     with pytest.raises(UnicodeEncodeError):
         cur.execute(f"select %{fmt_in}", ("\uddf8",))
 
@@ -124,7 +124,7 @@ def test_dump_enum(conn, fmt_in):
 def test_load_enc(conn, typename, encoding, fmt_out):
     cur = conn.cursor(binary=fmt_out)
 
-    conn.client_encoding = encoding
+    conn.execute(f"set client_encoding to {encoding}")
     (res,) = cur.execute(
         f"select chr(%s::int)::{typename}", (ord(eur),)
     ).fetchone()
@@ -146,7 +146,7 @@ def test_load_badenc(conn, typename, fmt_out):
     conn.autocommit = True
     cur = conn.cursor(binary=fmt_out)
 
-    conn.client_encoding = "latin1"
+    conn.execute("set client_encoding to latin1")
     with pytest.raises(psycopg3.DataError):
         cur.execute(f"select chr(%s::int)::{typename}", (ord(eur),))
 
@@ -164,7 +164,7 @@ def test_load_badenc(conn, typename, fmt_out):
 def test_load_ascii(conn, typename, fmt_out):
     cur = conn.cursor(binary=fmt_out)
 
-    conn.client_encoding = "ascii"
+    conn.execute("set client_encoding to sql_ascii")
     cur.execute(f"select chr(%s::int)::{typename}", (ord(eur),))
     assert cur.fetchone()[0] == eur.encode("utf8")
 
@@ -192,7 +192,7 @@ def test_text_array(conn, typename, fmt_in, fmt_out):
 @pytest.mark.parametrize("fmt_in", [Format.AUTO, Format.TEXT, Format.BINARY])
 @pytest.mark.parametrize("fmt_out", [pq.Format.TEXT, pq.Format.BINARY])
 def test_text_array_ascii(conn, fmt_in, fmt_out):
-    conn.client_encoding = "ascii"
+    conn.execute("set client_encoding to sql_ascii")
     cur = conn.cursor(binary=fmt_out)
     a = list(map(chr, range(1, 256))) + [eur]
     exp = [s.encode("utf8") for s in a]

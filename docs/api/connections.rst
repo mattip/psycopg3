@@ -127,10 +127,6 @@ The `!Connection` class
 
     .. autoattribute:: client_encoding
 
-        The property is writable for sync connections, read-only for async
-        ones: you should call ``await`` `~AsyncConnection.set_client_encoding`\
-        :samp:`({value})` instead.
-
         The value returned is always normalized to the Python codec
         `~codecs.CodecInfo.name`::
 
@@ -234,7 +230,6 @@ The `!AsyncConnection` class
         .. note:: It must be called as ``async with conn.transaction() as tx: ...``.
 
     .. automethod:: notifies
-    .. automethod:: set_client_encoding
     .. automethod:: set_autocommit
 
 
